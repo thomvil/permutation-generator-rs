@@ -1,0 +1,17 @@
+[package]
+edition = "2018"
+name = "permutation-generator-rs"
+version = "0.1.0"
+
+authors = ["Thomas Villa <thomvil87@gmail.com>"]
+description = "A direct permutation generator"
+documentation = "https://docs.rs/permutation-generator/"
+homepage = "https://github.com/thomvil/permutation-generator-rs"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/thomvil/permutation-generator-rs"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
