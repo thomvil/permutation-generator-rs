@@ -1,8 +1,13 @@
-use bit_index::*;
+#![feature(min_type_alias_impl_trait)]
 
+use bit_index::*;
+use std::convert::TryInto;
+
+mod permutation_generator;
 mod single_permutation;
 
-pub use single_permutation::*;
+pub use permutation_generator::*;
+pub(crate) use single_permutation::*;
 
 #[inline]
 fn factorial(nb_elems: u8) -> u128 {

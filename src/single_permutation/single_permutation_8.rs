@@ -16,7 +16,8 @@ impl SinglePermutation8 {
         }
     }
 
-    pub fn new(nb_elems: u8, idx: u16) -> Option<Self> {
+    #[allow(dead_code)]
+    pub(crate) fn new(nb_elems: u8, idx: u16) -> Option<Self> {
         if (idx as u128) >= factorial(nb_elems) - 1 {
             None
         } else {
