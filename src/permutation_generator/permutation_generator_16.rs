@@ -3,33 +3,34 @@ use super::*;
 #[derive(Clone, Copy, Debug)]
 pub struct PermutationGenerator16 {
     nb_elems: u8,
-    nb_perms: u128,
-    next_idx: u128,
+    nb_perms: u64,
+    next_idx: u64,
 }
 
 impl PermutationGenerator16 {
-    pub fn new(nb_elems: u8) -> Self {
-        if nb_elems > 16 {
-            panic!("This PermutationGenerator can only handle 16 elements!");
-        }
-        Self {
+    const MAX_ELEMENTS: u8 = 16;
+
+    pub fn new(nb_elems: u8) -> PResult<Self> {
+        Self::check_nb_elems(nb_elems).map(|_| Self {
             next_idx: 0,
-            nb_perms: factorial(nb_elems),
+            nb_perms: factorial64(nb_elems),
             nb_elems,
-        }
+        })
     }
 
     pub fn next_permutation(&mut self) -> Option<impl Iterator<Item = u8>> {
         self.nth(0)
     }
 
-    pub fn nth_absolute(nb_elems: u8, idx: u128) -> Option<impl Iterator<Item = u8>> {
-        Self::nth_absolute_raw(nb_elems, factorial(nb_elems), idx)
+    pub fn nth_absolute(nb_elems: u8, idx: u64) -> PResult<Option<impl Iterator<Item = u8>>> {
+        Self::check_nb_elems(nb_elems)
+            .map(|_| SinglePermutation16::new(nb_elems, factorial64(nb_elems), idx))
     }
 
-    pub fn nth(&mut self, step: u128) -> Option<impl Iterator<Item = u8>> {
-        let res = Self::nth_absolute_raw(self.nb_elems, self.nb_perms, self.next_idx + step);
-        self.next_idx += step + 1;
+    pub fn nth(&mut self, step: u64) -> Option<impl Iterator<Item = u8>> {
+        let step_result = self.next_idx.saturating_add(step);
+        let res = SinglePermutation16::new(self.nb_elems, self.nb_perms, step_result);
+        self.next_idx = step_result + 1;
         res
     }
 
@@ -37,18 +38,12 @@ impl PermutationGenerator16 {
         (self.nb_perms - self.next_idx) as usize
     }
 
-    fn nth_absolute_raw(
-        nb_elems: u8,
-        nb_perms: u128,
-        idx: u128,
-    ) -> Option<impl Iterator<Item = u8>> {
-        if idx >= nb_perms {
-            None
+    #[inline]
+    fn check_nb_elems(nb_elems: u8) -> PResult<()> {
+        if nb_elems > Self::MAX_ELEMENTS {
+            Err(PermutationGeneratorError::TooManyElements)
         } else {
-            Some(SinglePermutation16::new_unchecked(
-                nb_elems,
-                idx.try_into().unwrap(),
-            ))
+            Ok(())
         }
     }
 }
@@ -82,13 +77,13 @@ mod tests {
 
     #[test]
     fn zero() {
-        let mut pg = PermutationGenerator16::new(0);
+        let mut pg = PermutationGenerator16::new(0).unwrap();
         assert!(pg.next_permutation().is_none());
     }
 
     #[test]
     fn next_permutation() {
-        let mut pg = PermutationGenerator16::new(NB_ELEMS);
+        let mut pg = PermutationGenerator16::new(NB_ELEMS).unwrap();
         test_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8], pg.next_permutation());
         test_slice(&[0, 1, 2, 3, 4, 5, 6, 8, 7], pg.next_permutation());
     }
@@ -97,38 +92,38 @@ mod tests {
     fn nth_absolute() {
         test_slice(
             &[0, 1, 2, 3, 4, 5, 6, 7, 8],
-            PermutationGenerator16::nth_absolute(NB_ELEMS, 0),
+            PermutationGenerator16::nth_absolute(NB_ELEMS, 0).unwrap(),
         );
         test_slice(
             &[8, 7, 6, 5, 4, 3, 2, 1, 0],
-            PermutationGenerator16::nth_absolute(NB_ELEMS, factorial(NB_ELEMS) - 1),
+            PermutationGenerator16::nth_absolute(NB_ELEMS, factorial64(NB_ELEMS) - 1).unwrap(),
         );
         test_slice(
             &[1, 0, 2, 3, 4, 5, 6, 7, 8],
-            PermutationGenerator16::nth_absolute(NB_ELEMS, factorial(NB_ELEMS - 1)),
+            PermutationGenerator16::nth_absolute(NB_ELEMS, factorial64(NB_ELEMS - 1)).unwrap(),
         );
     }
 
     #[test]
     fn nth() {
-        let mut pg = PermutationGenerator16::new(NB_ELEMS);
+        let mut pg = PermutationGenerator16::new(NB_ELEMS).unwrap();
         test_slice(
             &[8, 7, 6, 5, 4, 3, 2, 1, 0],
-            pg.nth(factorial(NB_ELEMS) - 1),
+            pg.nth(factorial64(NB_ELEMS) - 1),
         );
         assert!(pg.next_permutation().is_none());
 
-        let mut pg = PermutationGenerator16::new(NB_ELEMS);
+        let mut pg = PermutationGenerator16::new(NB_ELEMS).unwrap();
         test_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8], pg.nth(0));
         test_slice(
             &[1, 0, 2, 3, 4, 5, 6, 7, 8],
-            pg.nth(factorial(NB_ELEMS - 1) - 1),
+            pg.nth(factorial64(NB_ELEMS - 1) - 1),
         );
     }
 
     #[test]
     fn iter() {
-        let iter = PermutationGenerator16::new(NB_ELEMS);
-        assert_eq!(factorial(NB_ELEMS) as usize, iter.count());
+        let iter = PermutationGenerator16::new(NB_ELEMS).unwrap();
+        assert_eq!(factorial64(NB_ELEMS) as usize, iter.count());
     }
 }

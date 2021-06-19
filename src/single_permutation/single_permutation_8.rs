@@ -1,27 +1,22 @@
 use super::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SinglePermutation8 {
+pub(crate) struct SinglePermutation8 {
     elems: BitIndex8,
     next_mod: u16,
     current_idx: u16,
 }
 
 impl SinglePermutation8 {
-    pub fn new_unchecked(nb_elems: u8, idx: u16) -> Self {
-        Self {
-            elems: BitIndex8::new(nb_elems).unwrap(),
-            next_mod: factorial(nb_elems - 1) as u16,
-            current_idx: idx,
-        }
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn new(nb_elems: u8, idx: u16) -> Option<Self> {
-        if (idx as u128) >= factorial(nb_elems) - 1 {
+    pub(crate) fn new(nb_elems: u8, nb_perms: u16, idx: u16) -> Option<Self> {
+        if idx >= nb_perms {
             None
         } else {
-            Some(Self::new_unchecked(nb_elems, idx))
+            Some(Self {
+                elems: BitIndex8::new(nb_elems).unwrap(),
+                next_mod: nb_perms / (nb_elems as u16),
+                current_idx: idx,
+            })
         }
     }
 
@@ -58,46 +53,40 @@ impl Iterator for SinglePermutation8 {
 mod tests {
     use super::*;
 
+    fn single_perm(nb_elems: u8, idx: u16) -> Option<SinglePermutation8> {
+        SinglePermutation8::new(nb_elems, factorial16(nb_elems), idx)
+    }
+
     #[test]
     fn new() {
-        assert_eq!(None, SinglePermutation8::new(4, 24));
+        assert_eq!(None, single_perm(4, 24));
     }
 
     #[test]
     fn new_unchecked_iterator() {
         assert_eq!(
             &[0, 1, 2, 3],
-            SinglePermutation8::new_unchecked(4, 0)
-                .collect::<Vec<_>>()
-                .as_slice()
+            single_perm(4, 0).unwrap().collect::<Vec<_>>().as_slice()
         );
 
         assert_eq!(
             &[1, 0, 2, 3],
-            SinglePermutation8::new_unchecked(4, 6)
-                .collect::<Vec<_>>()
-                .as_slice()
+            single_perm(4, 6).unwrap().collect::<Vec<_>>().as_slice()
         );
 
         assert_eq!(
             &[2, 0, 1, 3],
-            SinglePermutation8::new_unchecked(4, 12)
-                .collect::<Vec<_>>()
-                .as_slice()
+            single_perm(4, 12).unwrap().collect::<Vec<_>>().as_slice()
         );
 
         assert_eq!(
             &[3, 0, 1, 2],
-            SinglePermutation8::new_unchecked(4, 18)
-                .collect::<Vec<_>>()
-                .as_slice()
+            single_perm(4, 18).unwrap().collect::<Vec<_>>().as_slice()
         );
 
         assert_eq!(
             &[3, 2, 1, 0],
-            SinglePermutation8::new_unchecked(4, 23)
-                .collect::<Vec<_>>()
-                .as_slice()
+            single_perm(4, 23).unwrap().collect::<Vec<_>>().as_slice()
         );
     }
 }
