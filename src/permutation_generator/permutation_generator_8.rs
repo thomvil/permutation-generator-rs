@@ -76,6 +76,12 @@ mod tests {
     }
 
     #[test]
+    fn new() {
+        let pg = PermutationGenerator8::new(14);
+        assert_eq!(PermutationGeneratorError::TooManyElements, pg.unwrap_err());
+    }
+
+    #[test]
     fn zero() {
         let mut pg = PermutationGenerator8::new(0).unwrap();
         assert!(pg.next_permutation().is_none());
