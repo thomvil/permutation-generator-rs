@@ -1,6 +1,6 @@
 [package]
 edition = "2018"
-name = "permutation-generator-rs"
+name = "permutation-generator"
 version = "0.1.1"
 
 authors = ["Thomas Villa <thomvil87@gmail.com>"]
