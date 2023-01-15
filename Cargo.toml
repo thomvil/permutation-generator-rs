@@ -1,5 +1,5 @@
 [package]
-edition = "2018"
+edition = "2021"
 name = "permutation-generator"
 version = "0.1.1"
 
@@ -15,6 +15,9 @@ repository = "https://github.com/thomvil/permutation-generator-rs"
 bit-index = ">=0.2"
 
 [profile.release]
+# debug = false
 codegen-units = 1
 lto = true
 opt-level = 3
+# panic = "abort"
+# strip = true
