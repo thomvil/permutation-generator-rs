@@ -3,8 +3,8 @@ macro_rules! impl_factorial {
         #[inline]
         pub(crate) fn $fact(nb_elems: u8) -> $fact_type {
             match nb_elems {
-                0 | 1 | 2 => nb_elems as $fact_type,
-                _ => (1..=nb_elems).map(|i| i as $fact_type).product(),
+                0..=2 => <$fact_type>::from(nb_elems),
+                _ => (1..=nb_elems).map(|i| <$fact_type>::from(i)).product(),
             }
         }
     };

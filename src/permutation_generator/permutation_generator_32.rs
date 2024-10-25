@@ -1,6 +1,6 @@
-use super::*;
+use crate::{PResult, PermutationGeneratorError, SinglePermutation32, factorial::factorial128};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PermutationGenerator32 {
     nb_elems: u8,
     nb_perms: u128,
@@ -11,20 +11,19 @@ impl PermutationGenerator32 {
     const MAX_ELEMENTS: u8 = 32;
 
     pub fn new(nb_elems: u8) -> PResult<Self> {
-        Self::check_nb_elems(nb_elems).map(|_| Self {
+        Self::check_nb_elems(nb_elems)?;
+        Ok(Self {
             next_idx: 0,
             nb_perms: factorial128(nb_elems),
             nb_elems,
         })
     }
 
-    pub fn next_permutation(&mut self) -> Option<impl Iterator<Item = u8>> {
-        self.nth(0)
-    }
+    pub fn next_permutation(&mut self) -> Option<impl Iterator<Item = u8>> { self.nth(0) }
 
     pub fn nth_absolute(nb_elems: u8, idx: u128) -> PResult<Option<impl Iterator<Item = u8>>> {
-        Self::check_nb_elems(nb_elems)
-            .map(|_| SinglePermutation32::new(nb_elems, factorial128(nb_elems), idx))
+        Self::check_nb_elems(nb_elems)?;
+        Ok(SinglePermutation32::new(nb_elems, factorial128(nb_elems), idx))
     }
 
     pub fn nth(&mut self, step: u128) -> Option<impl Iterator<Item = u8>> {
@@ -34,12 +33,12 @@ impl PermutationGenerator32 {
         res
     }
 
-    /// Panics on nb_elems > 20
+    /// Panics on `nb_elems > 20`
+    #[must_use]
     pub fn nb_remaining(&self) -> usize {
-        match (self.nb_perms - self.next_idx).try_into() {
-            Ok(nb) => nb,
-            Err(_) => panic!("The size of the iterator owerflowed usize"),
-        }
+        (self.nb_perms - self.next_idx)
+            .try_into()
+            .expect("The size of the iterator owerflowed usize")
     }
 
     #[inline]
@@ -55,23 +54,20 @@ impl PermutationGenerator32 {
 impl Iterator for PermutationGenerator32 {
     type Item = impl Iterator<Item = u8>;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next_permutation()
-    }
+    fn next(&mut self) -> Option<Self::Item> { self.next_permutation() }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let nb_remaining = self.nb_remaining();
         (nb_remaining, Some(nb_remaining))
     }
 
-    fn count(self) -> usize {
-        self.nb_remaining()
-    }
+    fn count(self) -> usize { self.nb_remaining() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::PermutationGenerator32;
+    use crate::factorial::factorial128;
 
     const NB_ELEMS: u8 = 18;
 
@@ -112,7 +108,7 @@ mod tests {
         test_slice(
             (0..30).rev().collect::<Vec<_>>().as_slice(),
             PermutationGenerator32::nth_absolute(30, factorial128(30) - 1).unwrap(),
-        )
+        );
     }
 
     #[test]
@@ -136,7 +132,8 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "The size of the iterator owerflowed usize")]
+    #[allow(clippy::cast_possible_truncation)]
     fn iter_panic() {
         let iter = PermutationGenerator32::new(30).unwrap();
         assert_eq!(factorial128(30) as usize, iter.count());

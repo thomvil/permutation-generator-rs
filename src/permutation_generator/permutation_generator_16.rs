@@ -1,6 +1,6 @@
-use super::*;
+use crate::{PResult, PermutationGeneratorError, SinglePermutation16, factorial::factorial64};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PermutationGenerator16 {
     nb_elems: u8,
     nb_perms: u64,
@@ -11,20 +11,19 @@ impl PermutationGenerator16 {
     const MAX_ELEMENTS: u8 = 16;
 
     pub fn new(nb_elems: u8) -> PResult<Self> {
-        Self::check_nb_elems(nb_elems).map(|_| Self {
+        Self::check_nb_elems(nb_elems)?;
+        Ok(Self {
             next_idx: 0,
             nb_perms: factorial64(nb_elems),
             nb_elems,
         })
     }
 
-    pub fn next_permutation(&mut self) -> Option<impl Iterator<Item = u8>> {
-        self.nth(0)
-    }
+    pub fn next_permutation(&mut self) -> Option<impl Iterator<Item = u8>> { self.nth(0) }
 
     pub fn nth_absolute(nb_elems: u8, idx: u64) -> PResult<Option<impl Iterator<Item = u8>>> {
-        Self::check_nb_elems(nb_elems)
-            .map(|_| SinglePermutation16::new(nb_elems, factorial64(nb_elems), idx))
+        Self::check_nb_elems(nb_elems)?;
+        Ok(SinglePermutation16::new(nb_elems, factorial64(nb_elems), idx))
     }
 
     pub fn nth(&mut self, step: u64) -> Option<impl Iterator<Item = u8>> {
@@ -34,9 +33,9 @@ impl PermutationGenerator16 {
         res
     }
 
-    pub fn nb_remaining(&self) -> usize {
-        (self.nb_perms - self.next_idx) as usize
-    }
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
+    pub fn nb_remaining(&self) -> usize { (self.nb_perms - self.next_idx) as usize }
 
     #[inline]
     fn check_nb_elems(nb_elems: u8) -> PResult<()> {
@@ -51,23 +50,20 @@ impl PermutationGenerator16 {
 impl Iterator for PermutationGenerator16 {
     type Item = impl Iterator<Item = u8>;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next_permutation()
-    }
+    fn next(&mut self) -> Option<Self::Item> { self.next_permutation() }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let nb_remaining = self.nb_remaining();
         (nb_remaining, Some(nb_remaining))
     }
 
-    fn count(self) -> usize {
-        self.nb_remaining()
-    }
+    fn count(self) -> usize { self.nb_remaining() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::PermutationGenerator16;
+    use crate::factorial::factorial64;
 
     const NB_ELEMS: u8 = 9;
 
@@ -107,21 +103,16 @@ mod tests {
     #[test]
     fn nth() {
         let mut pg = PermutationGenerator16::new(NB_ELEMS).unwrap();
-        test_slice(
-            &[8, 7, 6, 5, 4, 3, 2, 1, 0],
-            pg.nth(factorial64(NB_ELEMS) - 1),
-        );
+        test_slice(&[8, 7, 6, 5, 4, 3, 2, 1, 0], pg.nth(factorial64(NB_ELEMS) - 1));
         assert!(pg.next_permutation().is_none());
 
         let mut pg = PermutationGenerator16::new(NB_ELEMS).unwrap();
         test_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 8], pg.nth(0));
-        test_slice(
-            &[1, 0, 2, 3, 4, 5, 6, 7, 8],
-            pg.nth(factorial64(NB_ELEMS - 1) - 1),
-        );
+        test_slice(&[1, 0, 2, 3, 4, 5, 6, 7, 8], pg.nth(factorial64(NB_ELEMS - 1) - 1));
     }
 
     #[test]
+    #[allow(clippy::cast_possible_truncation)]
     fn iter() {
         let iter = PermutationGenerator16::new(NB_ELEMS).unwrap();
         assert_eq!(factorial64(NB_ELEMS) as usize, iter.count());

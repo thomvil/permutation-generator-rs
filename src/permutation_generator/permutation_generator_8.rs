@@ -1,6 +1,6 @@
-use super::*;
+use crate::{PResult, PermutationGeneratorError, SinglePermutation8, factorial::factorial16};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PermutationGenerator8 {
     nb_elems: u8,
     nb_perms: u16,
@@ -11,32 +11,30 @@ impl PermutationGenerator8 {
     const MAX_ELEMENTS: u8 = 8;
 
     pub fn new(nb_elems: u8) -> PResult<Self> {
-        Self::check_nb_elems(nb_elems).map(|_| Self {
+        Self::check_nb_elems(nb_elems)?;
+        Ok(Self {
             next_idx: 0,
             nb_perms: factorial16(nb_elems),
             nb_elems,
         })
     }
 
-    pub fn next_permutation(&mut self) -> Option<impl Iterator<Item = u8>> {
-        self.nth(0)
-    }
+    pub fn next_permutation(&mut self) -> Option<impl Iterator<Item = u8>> { self.nth(0) }
 
     pub fn nth_absolute(nb_elems: u8, idx: u16) -> PResult<Option<impl Iterator<Item = u8>>> {
-        Self::check_nb_elems(nb_elems)
-            .map(|_| SinglePermutation8::new(nb_elems, factorial16(nb_elems), idx))
+        Self::check_nb_elems(nb_elems)?;
+        Ok(SinglePermutation8::new_precalculated(nb_elems, factorial16(nb_elems), idx))
     }
 
     pub fn nth(&mut self, step: u16) -> Option<impl Iterator<Item = u8>> {
         let step_result = self.next_idx.saturating_add(step);
-        let res = SinglePermutation8::new(self.nb_elems, self.nb_perms, step_result);
+        let res = SinglePermutation8::new_precalculated(self.nb_elems, self.nb_perms, step_result);
         self.next_idx = step_result + 1;
         res
     }
 
-    pub fn nb_remaining(&self) -> usize {
-        (self.nb_perms - self.next_idx) as usize
-    }
+    #[must_use]
+    pub fn nb_remaining(&self) -> usize { (self.nb_perms - self.next_idx) as usize }
 
     #[inline]
     fn check_nb_elems(nb_elems: u8) -> PResult<()> {
@@ -51,23 +49,22 @@ impl PermutationGenerator8 {
 impl Iterator for PermutationGenerator8 {
     type Item = impl Iterator<Item = u8>;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next_permutation()
-    }
+    fn next(&mut self) -> Option<Self::Item> { self.next_permutation() }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let nb_remaining = self.nb_remaining();
         (nb_remaining, Some(nb_remaining))
     }
 
-    fn count(self) -> usize {
-        self.nb_remaining()
-    }
+    fn count(self) -> usize { self.nb_remaining() }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::iter::Iterator;
+
+    use super::{PermutationGenerator8, PermutationGeneratorError};
+    use crate::factorial::factorial16;
 
     const NB_ELEMS: u8 = 4;
 
@@ -100,10 +97,7 @@ mod tests {
 
     #[test]
     fn nth_absolute() {
-        test_slice(
-            &[0, 1, 2, 3],
-            PermutationGenerator8::nth_absolute(NB_ELEMS, 0).unwrap(),
-        );
+        test_slice(&[0, 1, 2, 3], PermutationGenerator8::nth_absolute(NB_ELEMS, 0).unwrap());
         test_slice(
             &[3, 2, 1, 0],
             PermutationGenerator8::nth_absolute(NB_ELEMS, factorial16(NB_ELEMS) - 1).unwrap(),
@@ -127,16 +121,14 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::cast_possible_truncation)]
     fn iter() {
         let list = PermutationGenerator8::new(NB_ELEMS)
             .unwrap()
-            .map(|perm| perm.collect::<Vec<_>>())
+            .map(Iterator::collect::<Vec<_>>)
             .collect::<Vec<_>>();
         assert_eq!(factorial16(NB_ELEMS) as usize, list.len());
         assert_eq!(&[0, 1, 2, 3], list[0].as_slice());
-        assert_eq!(
-            &[3, 2, 1, 0],
-            list[factorial16(NB_ELEMS) as usize - 1].as_slice()
-        );
+        assert_eq!(&[3, 2, 1, 0], list[factorial16(NB_ELEMS) as usize - 1].as_slice());
     }
 }
