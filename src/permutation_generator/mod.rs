@@ -1,7 +1,10 @@
-mod permutation_generator_16;
-mod permutation_generator_32;
-mod permutation_generator_8;
+mod permutation_generator_16_gen;
+mod permutation_generator_32_gen;
+mod permutation_generator_8_gen;
 
+pub use permutation_generator_8_gen::PermutationGenerator8Gen;
+pub use permutation_generator_16_gen::PermutationGenerator16Gen;
+pub use permutation_generator_32_gen::PermutationGenerator32Gen;
+
+mod permutation_generator_8;
 pub use permutation_generator_8::PermutationGenerator8;
-pub use permutation_generator_16::PermutationGenerator16;
-pub use permutation_generator_32::PermutationGenerator32;

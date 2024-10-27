@@ -1,6 +1,6 @@
 use crate::{PResult, PermutationGeneratorError, SinglePermutation8, factorial::factorial16};
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PermutationGenerator8 {
     nb_elems: u8,
     nb_perms: u16,
@@ -19,14 +19,14 @@ impl PermutationGenerator8 {
         })
     }
 
-    pub fn next_permutation(&mut self) -> Option<impl Iterator<Item = u8>> { self.nth(0) }
+    pub fn next_permutation(&mut self) -> Option<SinglePermutation8> { self.nth(0) }
 
-    pub fn nth_absolute(nb_elems: u8, idx: u16) -> PResult<Option<impl Iterator<Item = u8>>> {
+    pub fn nth_absolute(nb_elems: u8, idx: u16) -> PResult<Option<SinglePermutation8>> {
         Self::check_nb_elems(nb_elems)?;
         Ok(SinglePermutation8::new_precalculated(nb_elems, factorial16(nb_elems), idx))
     }
 
-    pub fn nth(&mut self, step: u16) -> Option<impl Iterator<Item = u8>> {
+    pub fn nth(&mut self, step: u16) -> Option<SinglePermutation8> {
         let step_result = self.next_idx.saturating_add(step);
         let res = SinglePermutation8::new_precalculated(self.nb_elems, self.nb_perms, step_result);
         self.next_idx = step_result + 1;
@@ -47,7 +47,7 @@ impl PermutationGenerator8 {
 }
 
 impl Iterator for PermutationGenerator8 {
-    type Item = impl Iterator<Item = u8>;
+    type Item = SinglePermutation8;
 
     fn next(&mut self) -> Option<Self::Item> { self.next_permutation() }
 
@@ -93,6 +93,16 @@ mod tests {
         let mut pg = PermutationGenerator8::new(NB_ELEMS + 1).unwrap();
         test_slice(&[0, 1, 2, 3, 4], pg.next_permutation());
         test_slice(&[0, 1, 2, 4, 3], pg.next_permutation());
+    }
+
+    #[test]
+    fn peekable() {
+        let pg = PermutationGenerator8::new(NB_ELEMS).unwrap();
+
+        let mut peekable = pg.peekable();
+        let peeked = peekable.peek().unwrap().collect::<Vec<_>>();
+        let next = peekable.peek().unwrap().collect::<Vec<_>>();
+        assert_eq!(peeked, next);
     }
 
     #[test]

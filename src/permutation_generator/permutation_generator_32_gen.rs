@@ -1,13 +1,13 @@
 use crate::{PResult, PermutationGeneratorError, SinglePermutation32, factorial::factorial128};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PermutationGenerator32 {
+pub struct PermutationGenerator32Gen {
     nb_elems: u8,
     nb_perms: u128,
     next_idx: u128,
 }
 
-impl PermutationGenerator32 {
+impl PermutationGenerator32Gen {
     const MAX_ELEMENTS: u8 = 32;
 
     pub fn new(nb_elems: u8) -> PResult<Self> {
@@ -51,7 +51,7 @@ impl PermutationGenerator32 {
     }
 }
 
-impl Iterator for PermutationGenerator32 {
+impl Iterator for PermutationGenerator32Gen {
     type Item = impl Iterator<Item = u8>;
 
     fn next(&mut self) -> Option<Self::Item> { self.next_permutation() }
@@ -66,7 +66,7 @@ impl Iterator for PermutationGenerator32 {
 
 #[cfg(test)]
 mod tests {
-    use super::PermutationGenerator32;
+    use super::PermutationGenerator32Gen;
     use crate::factorial::factorial128;
 
     const NB_ELEMS: u8 = 18;
@@ -77,13 +77,13 @@ mod tests {
 
     #[test]
     fn zero() {
-        let mut pg = PermutationGenerator32::new(0).unwrap();
+        let mut pg = PermutationGenerator32Gen::new(0).unwrap();
         assert!(pg.next_permutation().is_none());
     }
 
     #[test]
     fn next_permutation() {
-        let mut pg = PermutationGenerator32::new(NB_ELEMS).unwrap();
+        let mut pg = PermutationGenerator32Gen::new(NB_ELEMS).unwrap();
         test_slice(
             &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
             pg.next_permutation(),
@@ -98,22 +98,22 @@ mod tests {
     fn nth_absolute() {
         test_slice(
             &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-            PermutationGenerator32::nth_absolute(NB_ELEMS, 0).unwrap(),
+            PermutationGenerator32Gen::nth_absolute(NB_ELEMS, 0).unwrap(),
         );
         test_slice(
             &[17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
-            PermutationGenerator32::nth_absolute(NB_ELEMS, factorial128(NB_ELEMS) - 1).unwrap(),
+            PermutationGenerator32Gen::nth_absolute(NB_ELEMS, factorial128(NB_ELEMS) - 1).unwrap(),
         );
 
         test_slice(
             (0..30).rev().collect::<Vec<_>>().as_slice(),
-            PermutationGenerator32::nth_absolute(30, factorial128(30) - 1).unwrap(),
+            PermutationGenerator32Gen::nth_absolute(30, factorial128(30) - 1).unwrap(),
         );
     }
 
     #[test]
     fn nth() {
-        let mut pg = PermutationGenerator32::new(NB_ELEMS).unwrap();
+        let mut pg = PermutationGenerator32Gen::new(NB_ELEMS).unwrap();
         test_slice(
             &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
             pg.next_permutation(),
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn iter() {
-        let iter = PermutationGenerator32::new(NB_ELEMS).unwrap();
+        let iter = PermutationGenerator32Gen::new(NB_ELEMS).unwrap();
         assert_eq!(factorial128(NB_ELEMS) as usize, iter.count());
     }
 
@@ -135,7 +135,7 @@ mod tests {
     #[should_panic(expected = "The size of the iterator owerflowed usize")]
     #[allow(clippy::cast_possible_truncation)]
     fn iter_panic() {
-        let iter = PermutationGenerator32::new(30).unwrap();
+        let iter = PermutationGenerator32Gen::new(30).unwrap();
         assert_eq!(factorial128(30) as usize, iter.count());
     }
 }
