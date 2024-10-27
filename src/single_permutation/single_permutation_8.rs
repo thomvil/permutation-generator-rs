@@ -1,7 +1,8 @@
 use bit_index::BitIndex8;
+
 use crate::factorial::factorial16;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SinglePermutation8 {
     elems:       BitIndex8,
     next_mod:    u16,
